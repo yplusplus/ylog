@@ -22,6 +22,7 @@ type RotateLogger struct {
 	logSizeLimit int64    // log file size limit (KByte)
 
 	mu     sync.Mutex // ensures atomic writes; protects the following fields
+	flags  int        // properties
 	buf    []byte     // buffer
 	f      *os.File   // destination of output
 	fname  string     // current log file name (format: YYYYMMDDHH.log[.ID])
@@ -34,6 +35,7 @@ func NewRotateLogger(logDir string, level LogLevel) (*RotateLogger, error) {
 		logDir:       logDir,
 		level:        level,
 		logSizeLimit: DEFAULT_LOG_FILE_SIZE,
+		flags:        LdefaultFlags,
 	}
 
 	var err error
@@ -126,6 +128,18 @@ func (l *RotateLogger) rotateFile(now time.Time) (err error) {
 	return
 }
 
+func (l *RotateLogger) Flags() int {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	return l.flags
+}
+
+func (l *RotateLogger) SetFlags(flags int) {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	l.flags = flags
+}
+
 // SetLogLevel sets log level
 func (l *RotateLogger) SetLogLevel(level LogLevel) {
 	atomic.StoreInt32((*int32)(&l.level), int32(level))
@@ -168,7 +182,7 @@ func (l *RotateLogger) Output(skipdepth int, s string) error {
 		l.buf = l.buf[:0]
 	}
 
-	formatHeader(&l.buf, now, file, line, fn)
+	formatHeader(&l.buf, l.flags, now, file, line, fn)
 	l.buf = append(l.buf, s...)
 	if len(s) == 0 || s[len(s)-1] != '\n' {
 		l.buf = append(l.buf, '\n')
@@ -181,67 +195,67 @@ func (l *RotateLogger) Output(skipdepth int, s string) error {
 }
 
 func (l *RotateLogger) Fatalf(format string, v ...interface{}) {
-	l.Output(3, "FATAL|"+fmt.Sprintf(format, v...))
+	l.Output(2, "FATAL|"+fmt.Sprintf(format, v...))
 	os.Exit(1)
 }
 
 func (l *RotateLogger) Fatal(v ...interface{}) {
-	l.Output(3, "FATAL|"+fmt.Sprintln(v...))
+	l.Output(2, "FATAL|"+fmt.Sprintln(v...))
 	os.Exit(1)
 }
 
 func (l *RotateLogger) Infof(format string, v ...interface{}) {
-	l.Output(3, "INFO|"+fmt.Sprintf(format, v...))
+	l.Output(2, "INFO|"+fmt.Sprintf(format, v...))
 }
 
 func (l *RotateLogger) Info(v ...interface{}) {
-	l.Output(3, "INFO|"+fmt.Sprintln(v...))
+	l.Output(2, "INFO|"+fmt.Sprintln(v...))
 }
 
 func (l *RotateLogger) Errorf(format string, v ...interface{}) {
 	if l.LogLevel() <= ERROR {
-		l.Output(3, "ERROR|"+fmt.Sprintf(format, v...))
+		l.Output(2, "ERROR|"+fmt.Sprintf(format, v...))
 	}
 }
 
 func (l *RotateLogger) Error(v ...interface{}) {
 	if l.LogLevel() <= ERROR {
-		l.Output(3, "ERROR|"+fmt.Sprintln(v...))
+		l.Output(2, "ERROR|"+fmt.Sprintln(v...))
 	}
 }
 
 func (l *RotateLogger) Warnf(format string, v ...interface{}) {
 	if l.LogLevel() <= WARN {
-		l.Output(3, "WARN|"+fmt.Sprintf(format, v...))
+		l.Output(2, "WARN|"+fmt.Sprintf(format, v...))
 	}
 }
 
 func (l *RotateLogger) Warn(v ...interface{}) {
 	if l.LogLevel() <= WARN {
-		l.Output(3, "WARN|"+fmt.Sprintln(v...))
+		l.Output(2, "WARN|"+fmt.Sprintln(v...))
 	}
 }
 
 func (l *RotateLogger) Tracef(format string, v ...interface{}) {
 	if l.LogLevel() <= TRACE {
-		l.Output(3, "TRACE|"+fmt.Sprintf(format, v...))
+		l.Output(2, "TRACE|"+fmt.Sprintf(format, v...))
 	}
 }
 
 func (l *RotateLogger) Trace(v ...interface{}) {
 	if l.LogLevel() <= TRACE {
-		l.Output(3, "TRACE|"+fmt.Sprintln(v...))
+		l.Output(2, "TRACE|"+fmt.Sprintln(v...))
 	}
 }
 
 func (l *RotateLogger) Debugf(format string, v ...interface{}) {
 	if l.LogLevel() <= DEBUG {
-		l.Output(3, "DEBUG|"+fmt.Sprintf(format, v...))
+		l.Output(2, "DEBUG|"+fmt.Sprintf(format, v...))
 	}
 }
 
 func (l *RotateLogger) Debug(v ...interface{}) {
 	if l.LogLevel() <= DEBUG {
-		l.Output(3, "DEBUG|"+fmt.Sprintln(v...))
+		l.Output(2, "DEBUG|"+fmt.Sprintln(v...))
 	}
 }
