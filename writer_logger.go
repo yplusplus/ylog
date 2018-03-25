@@ -62,12 +62,12 @@ func (l *WriterLogger) Output(skipdepth int, s string) error {
 	return err
 }
 
-// SetLogLevel sets log level
+// SetLogLevel sets log level for the logger
 func (l *WriterLogger) SetLogLevel(level LogLevel) {
 	atomic.StoreInt32((*int32)(&l.level), int32(level))
 }
 
-// LogLevel gets log level
+// LogLevel returns log level for the logger
 func (l *WriterLogger) LogLevel() LogLevel {
 	return LogLevel(atomic.LoadInt32((*int32)(&l.level)))
 }

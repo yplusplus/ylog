@@ -107,7 +107,7 @@ func (l *RotateLogger) rotateFile(now time.Time) (err error) {
 		l.fname = currentFileName
 		l.fid = 0
 		needCreateFile = true
-	} else if l.nbytes >= l.logSizeLimit { // current log file is too large
+	} else if l.logSizeLimit > 0 && l.nbytes >= l.logSizeLimit { // current log file is too large
 		l.fid++
 		needCreateFile = true
 	} else if l.f == nil {
@@ -128,26 +128,43 @@ func (l *RotateLogger) rotateFile(now time.Time) (err error) {
 	return
 }
 
+// Flags returns the flags for the logger
 func (l *RotateLogger) Flags() int {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 	return l.flags
 }
 
+// Flags sets the flags for the logger
 func (l *RotateLogger) SetFlags(flags int) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 	l.flags = flags
 }
 
-// SetLogLevel sets log level
-func (l *RotateLogger) SetLogLevel(level LogLevel) {
-	atomic.StoreInt32((*int32)(&l.level), int32(level))
+// LogSizeLimit returns a single log file size limit
+func (l *RotateLogger) LogSizeLimit() int64 {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	return l.logSizeLimit
 }
 
-// LogLevel gets log level
+// LogSizeLimit sets the single log file size limit for logger
+// Give a non positive logSizeLimit to disable log splitting by size.
+func (l *RotateLogger) SetLogSizeLimit(logSizeLimit int64) {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	l.logSizeLimit = logSizeLimit
+}
+
+// LogLevel returns the log level for the logger
 func (l *RotateLogger) LogLevel() LogLevel {
 	return LogLevel(atomic.LoadInt32((*int32)(&l.level)))
+}
+
+// SetLogLevel sets log level for the logger
+func (l *RotateLogger) SetLogLevel(level LogLevel) {
+	atomic.StoreInt32((*int32)(&l.level), int32(level))
 }
 
 // Output outputs content to log file
