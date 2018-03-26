@@ -21,7 +21,7 @@ const (
 	Lshortfile                // final file name element and line number: d.go:23. overrides Llongfile
 	LUTC                      // if Ldate or Ltime is set, use UTC rather than the local time zone
 	Lfuncname                 // the name of function outputs log
-	Lloglevel                 // the log level name
+	Lloglevel                 // the log level name TODO
 	LallFlags     = (1 << iota) - 1
 
 	LdefaultFlags = Ldate | Ltime | Lmicroseconds | Lshortfile | Lloglevel
